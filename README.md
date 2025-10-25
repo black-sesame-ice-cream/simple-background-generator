@@ -1,4 +1,4 @@
-# Simple-Background-Generator
+# Simple Background Generator
 ![image1](images/image-1.png)
 ![image2](images/image-2.png)
 
