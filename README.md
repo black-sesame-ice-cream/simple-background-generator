@@ -1,6 +1,7 @@
 # Simple Background Generator
 ![image1](images/image-1.png)
 ![image2](images/image-2.png)
+![image3](images/image-3.png)
 
 ## Recommended Environment
 This tool is designed for use on a PC with the Google Chrome browser. Operation on other devices or browsers is not guaranteed.
@@ -56,11 +57,13 @@ It allows you to create and customize four different patterns, check them in a r
 Please see below for details.
 
 [License](LICENSE/)
+[Third-Party Licenses](THIRD-PARTY-LICENSES.txt/)
 
 ## ライセンス
 以下を参照してください。
 
 [ライセンス](LICENSE/)
+[第三者ライセンス](THIRD-PARTY-LICENSES.txt/)
 
 ## Tech Stack
 This tool is built entirely with client-side technologies, requiring no frameworks or libraries.
@@ -68,3 +71,5 @@ This tool is built entirely with client-side technologies, requiring no framewor
 -   CSS (Custom Properties, Flexbox)
 -   JavaScript (Vanilla JS)
 -   Canvas API
+-   pako@2.1.0
+-   upng-js@2.1.0

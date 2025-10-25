@@ -1,0 +1,9 @@
+{
+  "name": "simple-background-generator",
+  "version": "1.0.0",
+  "license": "ISC",
+  "dependencies": {
+    "pako": "^2.1.0",
+    "upng-js": "^2.1.0"
+  }
+}

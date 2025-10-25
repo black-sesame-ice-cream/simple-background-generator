@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>シンプル背景ジェネレーター</title>
-    
+    <script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/upng-js@2.1.0/UPNG.min.js" defer></script>
+
     <style>
         /* --- 既存のミッドナイトテーマ変数 --- */
         :root {
@@ -441,7 +443,7 @@
         </div>
     </div>
 
-    <a href="https://github.com/black-sesame-ice-cream/simple-background-generator" target="_blank" rel="noopener noreferrer" class="github-icon-link" title="View on GitHub">
+    <a href="" target="_blank" rel="noopener noreferrer" class="github-icon-link" title="View on GitHub">
             <img src="images/github-icon.png" alt="GitHub" />
     </a>
 
@@ -622,11 +624,44 @@
                 downloadButton.disabled = false;
             }
 
+            // ★UPNG.js を使うように変更
             function downloadImage() {
-                const link = document.createElement('a');
-                link.download = `background_${imgWidth.value}x${imgHeight.value}.png`;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
+                if (typeof UPNG === 'undefined') {
+                    alert('圧縮ライブラリの読み込みに失敗しました。');
+                    // 予備として従来のダウンロード方法を実行
+                    // const link = document.createElement('a');
+                    // link.download = `background_${imgWidth.value}x${imgHeight.value}.png`;
+                    // link.href = canvas.toDataURL('image/png');
+                    // link.click();
+                    return;
+                }
+
+                try {
+                    // 1. Canvasからピクセルデータを取得 (RGBA配列)
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const pixels = imageData.data.buffer; // UPNG.jsはArrayBufferを期待
+
+                    // 2. UPNG.jsでエンコード
+                    //    第4引数 (cnum) を 0 に設定すると、最適な可逆圧縮 (lossless) が行われます。
+                    const pngArrayBuffer = UPNG.encode([pixels], canvas.width, canvas.height, 0);
+
+                    // 3. Blobを作成してダウンロードURLを生成
+                    const blob = new Blob([pngArrayBuffer], { type: 'image/png' });
+                    const url = URL.createObjectURL(blob);
+
+                    // 4. ダウンロードリンクを作成して実行
+                    const link = document.createElement('a');
+                    link.download = `background_${imgWidth.value}x${imgHeight.value}.png`;
+                    link.href = url;
+                    link.click();
+
+                    // 5. URLを解放
+                    URL.revokeObjectURL(url);
+
+                } catch (error) {
+                    console.error("PNGの圧縮中にエラーが発生しました:", error);
+                    alert("画像の保存に失敗しました。");
+                }
             }
 
             /**
