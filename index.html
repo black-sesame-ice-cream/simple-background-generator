@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>シンプル背景ジェネレーター</title>
+    
+    <style>
+        /* --- 既存のミッドナイトテーマ変数 --- */
+        :root {
+            --midnight-blue-dark: #1a202c;
+            --midnight-blue-medium: #2d3748;
+            --midnight-blue-light: #4a5568;
+            --accent-purple: #6b46c1;
+            --accent-purple-hover: #553c9a;
+            --text-light: #e2e8f0;
+            --text-lighter: #f7fafc;
+            --border-dark: #232c3d;
+        }
+
+        /* --- Tailwindの代わりに基本スタイルを定義 --- */
+        body {
+            font-family: sans-serif; /* font-sans */
+            background-color: var(--midnight-blue-dark); /* bg-midnight-dark */
+            color: var(--text-light); /* text-text-light */
+            margin: 0;
+            padding: 2rem; /* p-8 (簡略化) */
+        }
+
+        /* --- JSが使用する .hidden クラス (必須) --- */
+        .hidden {
+            display: none !important; /* Tailwindの .hidden と同等 */
+        }
+
+        /* --- レイアウトコンテナ --- */
+        .main-container {
+            max-width: 1280px; /* max-w-7xl */
+            margin: 0 auto; /* mx-auto */
+            background-color: var(--midnight-blue-medium); /* bg-midnight-medium */
+            border-radius: 0.75rem; /* rounded-xl */
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1); /* shadow-2xl */
+            overflow: hidden; /* overflow-hidden */
+        }
+
+        .layout-flex {
+            display: flex; /* lg:flex (常にflex) */
+        }
+
+        /* --- コントロールパネル (左側) --- */
+        .controls-panel {
+            width: 33.33%; /* lg:w-1/3 */
+            background-color: var(--midnight-blue-medium); /* bg-midnight-medium */
+            padding: 1.5rem; /* p-6 */
+            border-right: 1px solid var(--border-dark); /* lg:border-r */
+        }
+
+        .controls-panel h1 {
+            font-size: 1.875rem; /* text-3xl */
+            font-weight: bold; /* font-bold */
+            color: var(--text-lighter); /* text-text-lighter */
+            margin-bottom: 1.5rem; /* mb-6 */
+            text-align: center; /* text-center */
+        }
+        
+        /* space-y-6 の代替 */
+        .controls-panel > div > div {
+             margin-top: 1.5rem;
+        }
+        .controls-panel > div > div:first-child {
+            margin-top: 0;
+        }
+
+        .controls-panel h2 {
+            font-size: 1.125rem; /* text-lg */
+            font-weight: 600; /* font-semibold */
+            margin-bottom: 0.75rem; /* mb-3 */
+        }
+
+        /* --- フォーム要素の共通スタイル --- */
+        label {
+            display: block; /* block */
+            font-size: 0.875rem; /* text-sm */
+            font-weight: 500; /* font-medium */
+            margin-bottom: 0.25rem; /* mb-1 */
+        }
+
+        /* 既存のフォームスタイルとTailwindのスタイルを統合 */
+        input[type="number"], select {
+            background-color: var(--midnight-blue-medium);
+            border: 1px solid var(--midnight-blue-light);
+            color: var(--text-light);
+            width: 100%; /* w-full */
+            border-radius: 0.375rem; /* rounded-md */
+            padding: 0.5rem 0.75rem; /* Tailwindフォームのデフォルトpadding */
+            box-sizing: border-box; /* paddingを含めて幅を計算 */
+        }
+        input[type="number"]:focus, select:focus {
+            border-color: var(--accent-purple);
+            box-shadow: 0 0 0 1px var(--accent-purple);
+            outline: none;
+        }
+        
+        /* 寸法入力ボックスの幅を 50% に変更 */
+        #imgWidth, #imgHeight {
+            width: 50%;
+        }
+
+
+        /* 既存のinput[type=color] スタイル (変更なし) */
+        input[type="color"] {
+            -webkit-appearance: none; -moz-appearance: none; appearance: none;
+            width: 4rem; height: 2.5rem; padding: 0;
+            border: 1px solid var(--midnight-blue-light);
+            border-radius: 0.375rem; cursor: pointer;
+            background-color: var(--midnight-blue-medium);
+        }
+        input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; border-radius: 0.375rem; }
+        input[type="color"]::-webkit-color-swatch { border: none; border-radius: 0.375rem; }
+
+        /* --- セクション別スタイル --- */
+        
+        /* 1. 寸法 (flex gap-4) */
+        .dimension-group {
+            display: flex;
+            gap: 1rem;
+        }
+        .dimension-group > div {
+            flex: 1 1 0%; /* flex-1 */
+        }
+
+        /* 2. パターン選択 (flex gap-2 flex-wrap) */
+        #patternTypeSelector {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        
+        /* パターン選択のラベル */
+        #patternTypeSelector label {
+            flex: 1; /* flex-1 */
+            min-width: 100px; /* min-w-[100px] */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem; /* p-3 */
+            border-radius: 0.5rem; /* rounded-lg */
+            border: 1px solid var(--midnight-blue-light); /* border border-midnight-light */
+            cursor: pointer; /* cursor-pointer */
+            background-color: var(--midnight-blue-dark); /* bg-midnight-blue-dark */
+            margin-bottom: 0; /* labelのデフォルトマージンをリセット */
+        }
+        #patternTypeSelector label:has(:checked) {
+             border-color: var(--accent-purple); /* has-[:checked]:border-accent-purple */
+        }
+
+        #patternTypeSelector input[type="radio"] {
+            /* 既存の .radio-checked スタイル */
+            height: 1rem; width: 1rem;
+            border-color: var(--midnight-blue-light);
+        }
+        #patternTypeSelector input[type="radio"]:checked {
+            background-color: var(--accent-purple);
+            border-color: var(--accent-purple);
+        }
+
+        #patternTypeSelector span {
+            margin-left: 0.5rem; /* ml-2 */
+            font-size: 0.875rem; /* text-sm */
+            font-weight: 500; /* font-medium */
+        }
+
+        /* 3. オプション (flex flex-wrap items-end gap-x-6 gap-y-4) */
+        #optionsSolid, #optionsGradient, #optionsCheckerboard, #optionsStripes {
+            display: flex;
+            flex-wrap: wrap; /* flex-wrap */
+            align-items: flex-end; /* items-end */
+            gap: 1rem 1.5rem; /* gap-y-4 gap-x-6 */
+        }
+        
+        /* オプショングループ内の共通スタイル */
+        .option-group {
+            display: flex;
+            align-items: flex-end;
+            gap: 1rem; /* gap-4 */
+        }
+        .option-group-center {
+            display: flex;
+            align-items: center; /* items-center */
+            gap: 1rem; /* gap-4 */
+            padding-bottom: 0.25rem; /* pb-1 */
+        }
+        
+        .option-group-center label,
+        .option-group-center span {
+            margin-bottom: 0;
+            white-space: nowrap; /* whitespace-nowrap */
+        }
+        
+        /* 角度入力欄のスタイル */
+        #checkerSize, #stripeWidth, #stripeGap, 
+        #gradientAngle, #stripeAngle {
+             width: 6rem; /* w-24 */
+        }
+
+        /* ラジオボタングループ (方向など) */
+        .radio-group {
+            display: flex;
+            gap: 0.75rem; /* gap-3 */
+        }
+        .radio-group label {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0;
+        }
+        .radio-group input[type="radio"] {
+             /* 既存の .radio-checked スタイル */
+            height: 1rem; width: 1rem;
+            border-color: var(--midnight-blue-light);
+        }
+        .radio-group input[type="radio"]:checked {
+            background-color: var(--accent-purple);
+            border-color: var(--accent-purple);
+        }
+        .radio-group span {
+            margin-left: 0.5rem; /* ml-2 */
+            font-size: 0.875rem; /* text-sm */
+        }
+
+        /* 4. アクションボタン */
+        #downloadButton {
+            width: 100%; /* w-full */
+            background-color: #16a34a; /* bg-green-600 */
+            color: white; /* text-white */
+            font-weight: bold; /* font-bold */
+            padding: 0.75rem 1rem; /* py-3 px-4 */
+            border-radius: 0.5rem; /* rounded-lg */
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.15s ease-in-out;
+        }
+        #downloadButton:hover {
+            background-color: #15803d; /* hover:bg-green-700 */
+        }
+        #downloadButton:disabled {
+            background-color: #4a5568; /* (例) 無効時の色 */
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        /* --- プレビューエリア (右側) --- */
+        .preview-area {
+            width: 66.67%; /* lg:w-2/3 */
+            padding: 2.5rem; /* lg:p-10 */
+            background-color: var(--midnight-dark); /* bg-midnight-dark */
+            display: flex;
+            align-items: center; /* items-center */
+            justify-content: center; /* justify-center */
+            min-height: 400px; /* min-h-[400px] */
+        }
+
+        .preview-wrapper {
+            max-width: 800px;
+            max-height: 600px;
+            width: 100%; /* w-full */
+            height: 100%; /* h-full */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden; /* overflow-hidden */
+            border-radius: 0.5rem; /* rounded-lg */
+            background-color: var(--midnight-blue-medium); /* bg-midnight-medium */
+            /* 既存の市松模様背景 */
+            background-image: linear-gradient(45deg, var(--midnight-blue-light) 25%, transparent 25%), linear-gradient(-45deg, var(--midnight-blue-light) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, var(--midnight-blue-light) 75%), linear-gradient(-45deg, transparent 75%, var(--midnight-blue-light) 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+        
+        #previewCanvas {
+            display: block; /* block */
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain; /* object-fit: contain */
+        }
+
+        /* --- 既存のスクロールバースタイル (変更なし) --- */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--midnight-blue-medium); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: var(--midnight-blue-light); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent-purple-hover); }
+        
+        .github-icon-link {
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        z-index: 999;
+        }
+
+        .github-icon-link img {
+        width: 32px;
+        height: 32px;
+        }
+
+        .github-icon-link:hover img {
+        transform: scale(1.1);
+        }
+
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="layout-flex">
+
+            <div class="controls-panel">
+                <h1>背景ジェネレーター</h1>
+                
+                <div>
+
+                    <div>
+                        <button id="downloadButton" disabled>
+                            PNGで保存
+                        </button>
+                    </div>
+
+
+                    <div>
+                        <h2>寸法 (px)</h2>
+                        <div class="dimension-group">
+                            <div>
+                                <label for="imgWidth">幅</label>
+                                <input type="number" id="imgWidth" value="800" min="1">
+                            </div>
+                            <div>
+                                <label for="imgHeight">高さ</label>
+                                <input type="number" id="imgHeight" value="600" min="1">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h2>パターン</h2>
+                        <div id="patternTypeSelector">
+                            <label>
+                                <input type="radio" name="patternType" value="solid" checked>
+                                <span>単色</span>
+                            </label>
+                            <label>
+                                <input type="radio" name="patternType" value="gradient">
+                                <span>グラデーション</span>
+                            </label>
+                            <label>
+                                <input type="radio" name="patternType" value="checkerboard">
+                                <span>市松模様</span>
+                            </label>
+                            <label>
+                                <input type="radio" name="patternType" value="stripes">
+                                <span>縞模様</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h2>オプション</h2>
+                    <div id="optionsSolid">
+                            <div class="option-group">
+                                <div>
+                                    <label for="solidColor">色</label>
+                                    <input type="color" id="solidColor" value="#EEEEEE">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="optionsGradient" class="hidden">
+                            <div class="option-group">
+                                <div>
+                                    <label for="gradientColor1">開始色</label>
+                                    <input type="color" id="gradientColor1" value="#FFFFFF">
+                                </div>
+                                <div>
+                                    <label for="gradientColor2">終了色</label>
+                                    <input type="color" id="gradientColor2" value="#000000">
+                                </div>
+                            </div>
+                            <div class="option-group-center">
+                                <label for="gradientAngle">回転 (度)</label>
+                                <input type="number" id="gradientAngle" value="90" min="0" max="360" step="1">
+                            </div>
+                            </div>
+
+                        <div id="optionsCheckerboard" class="hidden">
+                            <div class="option-group">
+                                <div>
+                                    <label for="checkerColor1">色 1</label>
+                                    <input type="color" id="checkerColor1" value="#FFFFFF">
+                                </div>
+                                <div>
+                                    <label for="checkerColor2">色 2</label>
+                                    <input type="color" id="checkerColor2" value="#CCCCCC">
+                                </div>
+                            </div>
+                            <div class="option-group-center">
+                                <label for="checkerSize">サイズ (px)</label>
+                                <input type="number" id="checkerSize" value="20" min="1">
+                            </div>
+                        </div>
+
+                        <div id="optionsStripes" class="hidden">
+                            <div class="option-group">
+                                <div>
+                                    <label for="stripeBgColor">背景色</label>
+                                    <input type="color" id="stripeBgColor" value="#FFFFFF">
+                                </div>
+                                <div>
+                                    <label for="stripeColor">縞色</label>
+                                    <input type="color" id="stripeColor" value="#CCCCCC">
+                                </div>
+                            </div>
+                            <div class="option-group-center">
+                                <label for="stripeWidth">縞幅 (px)</label>
+                                <input type="number" id="stripeWidth" value="10" min="1">
+                            </div>
+                            <div class="option-group-center">
+                                <label for="stripeGap">間隔 (px)</label>
+                                <input type="number" id="stripeGap" value="10" min="1">
+                            </div>
+                            <div class="option-group-center">
+                                <label for="stripeAngle">回転 (度)</label>
+                                <input type="number" id="stripeAngle" value="0" min="0" max="360" step="1">
+                            </div>
+                            </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="preview-area">
+                <div class="preview-wrapper">
+                    <canvas id="previewCanvas"></canvas>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <a href="" target="_blank" rel="noopener noreferrer" class="github-icon-link" title="View on GitHub">
+            <img src="images/github-icon.png" alt="GitHub" />
+    </a>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- 要素の取得 ---
+            const $ = (selector) => document.getElementById(selector);
+
+            // 寸法
+            const imgWidth = $('imgWidth');
+            const imgHeight = $('imgHeight');
+
+            // パターン選択
+            const patternSelectors = document.querySelectorAll('input[name="patternType"]');
+            
+            // オプションコンテナ
+            const optionsSolid = $('optionsSolid');
+            const optionsGradient = $('optionsGradient');
+            const optionsCheckerboard = $('optionsCheckerboard');
+            const optionsStripes = $('optionsStripes'); 
+
+            // 単色オプション
+            const solidColor = $('solidColor');
+
+            // グラデーションオプション
+            const gradientColor1 = $('gradientColor1');
+            const gradientColor2 = $('gradientColor2');
+            const gradientAngle = $('gradientAngle'); 
+
+            // 市松模様オプション
+            const checkerColor1 = $('checkerColor1');
+            const checkerColor2 = $('checkerColor2');
+            const checkerSize = $('checkerSize');
+
+            // 縞模様オプション
+            const stripeBgColor = $('stripeBgColor');
+            const stripeColor = $('stripeColor');
+            const stripeWidth = $('stripeWidth');
+            const stripeGap = $('stripeGap');
+            const stripeAngle = $('stripeAngle'); 
+
+            // アクションボタン
+            const downloadButton = $('downloadButton');
+
+            // プレビューキャンバス
+            const canvas = $('previewCanvas');
+            const ctx = canvas.getContext('2d');
+
+            // --- 関数定義 ---
+
+            function updateOptionVisibility() {
+                const selectedPattern = document.querySelector('input[name="patternType"]:checked').value;
+                optionsSolid.classList.add('hidden');
+                optionsGradient.classList.add('hidden');
+                optionsCheckerboard.classList.add('hidden');
+                optionsStripes.classList.add('hidden'); 
+
+                if (selectedPattern === 'solid') {
+                    optionsSolid.classList.remove('hidden');
+                } else if (selectedPattern === 'gradient') {
+                    optionsGradient.classList.remove('hidden');
+                } else if (selectedPattern === 'checkerboard') {
+                    optionsCheckerboard.classList.remove('hidden');
+                } else if (selectedPattern === 'stripes') { 
+                    optionsStripes.classList.remove('hidden');
+                }
+                generateImage(); // 表示切り替え時にも自動更新
+            }
+
+            function drawSolidColor(width, height) {
+                ctx.fillStyle = solidColor.value;
+                ctx.fillRect(0, 0, width, height);
+            }
+
+            function drawGradient(width, height) {
+                // 描画時に再度 0-360 の整数に丸める
+                let angle = parseInt(gradientAngle.value, 10) || 0;
+                if (angle < 0) angle = 0;
+                if (angle > 360) angle = 360;
+
+                const angleRad = (angle * Math.PI) / 180;
+                
+                const x1 = Math.cos(angleRad + Math.PI) * (width / 2) + (width / 2);
+                const y1 = Math.sin(angleRad + Math.PI) * (height / 2) + (height / 2);
+                const x2 = Math.cos(angleRad) * (width / 2) + (width / 2);
+                const y2 = Math.sin(angleRad) * (height / 2) + (height / 2);
+                
+                let gradient = ctx.createLinearGradient(x1, y1, x2, y2);
+                
+                gradient.addColorStop(0, gradientColor1.value);
+                gradient.addColorStop(1, gradientColor2.value);
+                
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, width, height);
+            }
+
+            function drawCheckerboard(width, height) {
+                const size = parseInt(checkerSize.value, 10) || 20;
+                const color1 = checkerColor1.value;
+                const color2 = checkerColor2.value;
+
+                for (let y = 0; y < height; y += size) {
+                    for (let x = 0; x < width; x += size) {
+                        const isColor1 = (Math.floor(x / size) + Math.floor(y / size)) % 2 === 0;
+                        ctx.fillStyle = isColor1 ? color1 : color2;
+                        ctx.fillRect(x, y, size, size);
+                    }
+                }
+            }
+
+            function drawStripes(width, height) {
+                const bgColor = stripeBgColor.value;
+                const color = stripeColor.value;
+                const sWidth = parseInt(stripeWidth.value, 10) || 10;
+                const sGap = parseInt(stripeGap.value, 10) || 10;
+                const totalPatternWidth = sWidth + sGap;
+                
+                // 描画時に再度 0-360 の整数に丸める
+                let angle = parseInt(stripeAngle.value, 10) || 0;
+                if (angle < 0) angle = 0;
+                if (angle > 360) angle = 360;
+
+                const angleRad = (angle * Math.PI) / 180;
+
+                // 1. 背景色で塗りつぶし
+                ctx.fillStyle = bgColor;
+                ctx.fillRect(0, 0, width, height);
+
+                // 2. 縞模様を描画 (回転)
+                ctx.save();
+                ctx.fillStyle = color;
+                
+                // 回転の中心をキャンバスの中心に設定
+                ctx.translate(width / 2, height / 2);
+                ctx.rotate(angleRad);
+                
+                const maxDim = Math.sqrt(width * width + height * height);
+                const startX = -maxDim / 2;
+                const startY = -maxDim / 2;
+
+                // 縦縞を描画 (0度が縦)
+                for (let x = startX; x < maxDim / 2; x += totalPatternWidth) {
+                    ctx.fillRect(x, startY, sWidth, maxDim);
+                }
+
+                ctx.restore();
+            }
+
+            function generateImage() {
+                const requestedWidth = parseInt(imgWidth.value, 10) || 800;
+                const requestedHeight = parseInt(imgHeight.value, 10) || 600;
+                const selectedPattern = document.querySelector('input[name="patternType"]:checked').value;
+
+                // Canvasのピクセルサイズを設定
+                canvas.width = requestedWidth;
+                canvas.height = requestedHeight;
+
+                // Canvasをクリア
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // 描画処理の分岐
+                switch (selectedPattern) {
+                    case 'solid':
+                        drawSolidColor(requestedWidth, requestedHeight);
+                        break;
+                    case 'gradient':
+                        drawGradient(requestedWidth, requestedHeight);
+                        break;
+                    case 'checkerboard':
+                        drawCheckerboard(requestedWidth, requestedHeight);
+                        break;
+                    case 'stripes': 
+                        drawStripes(requestedWidth, requestedHeight);
+                        break;
+                }
+
+                // ダウンロードボタンを有効化
+                downloadButton.disabled = false;
+            }
+
+            function downloadImage() {
+                const link = document.createElement('a');
+                link.download = `background_${imgWidth.value}x${imgHeight.value}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            }
+
+            /**
+             * 角度入力を 0-360 の整数に補正し、画像生成をトリガーする
+             * @param {Event} event
+             */
+            function handleAngleInput(event) {
+                let value = parseInt(event.target.value, 10);
+                
+                // 入力が空や "10e" のような不正な場合は、描画だけ行う
+                if (isNaN(value)) {
+                    // ただし、入力が "-" だけであれば 0 として扱う
+                    if (event.target.value.trim() === '-') {
+                         event.target.value = 0;
+                    }
+                    generateImage();
+                    return; 
+                }
+
+                // 範囲外の値を補正
+                if (value < 0) {
+                    event.target.value = 0;
+                } else if (value > 360) {
+                    event.target.value = 360;
+                } else {
+                    // 整数化 (例: "10.5" -> 10)
+                    event.target.value = Math.floor(value);
+                }
+                
+                generateImage(); // 補正後に画像生成
+            }
+
+            // --- イベントリスナーの設定 ---
+
+            // 寸法変更
+            imgWidth.addEventListener('input', generateImage);
+            imgHeight.addEventListener('input', generateImage);
+
+            // パターン選択のラジオボタン
+            patternSelectors.forEach(radio => {
+                radio.addEventListener('change', updateOptionVisibility);
+            });
+
+            // 単色オプション
+            solidColor.addEventListener('input', generateImage);
+
+            // グラデーションオプション
+            gradientColor1.addEventListener('input', generateImage);
+            gradientColor2.addEventListener('input', generateImage);
+            gradientAngle.addEventListener('input', handleAngleInput); // 変更
+
+            // 市松模様オプション
+            checkerColor1.addEventListener('input', generateImage);
+            checkerColor2.addEventListener('input', generateImage);
+            checkerSize.addEventListener('input', generateImage);
+
+            // 縞模様オプション
+            stripeBgColor.addEventListener('input', generateImage);
+            stripeColor.addEventListener('input', generateImage);
+            stripeWidth.addEventListener('input', generateImage);
+            stripeGap.addEventListener('input', generateImage);
+            stripeAngle.addEventListener('input', handleAngleInput); // 変更
+
+            // ダウンロードボタン
+            downloadButton.addEventListener('click', downloadImage);
+
+            // --- 初期化 ---
+            updateOptionVisibility(); // オプション表示を初期化 (初回も画像生成)
+        });
+    </script>
+</body>
+</html>
