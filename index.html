@@ -284,7 +284,6 @@
             object-fit: contain; /* object-fit: contain */
         }
 
-        /* --- 既存のスクロールバースタイル (変更なし) --- */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: var(--midnight-blue-medium); border-radius: 10px; }
         ::-webkit-scrollbar-thumb { background: var(--midnight-blue-light); border-radius: 10px; }
@@ -296,13 +295,24 @@
         left: 10px;
         z-index: 999;
         }
-
         .github-icon-link img {
         width: 32px;
         height: 32px;
         }
-
         .github-icon-link:hover img {
+        transform: scale(1.1);
+        }
+        .booth-icon-link {
+        position: fixed;
+        top: 55px;
+        left: 10px;
+        z-index: 999;
+        }
+        .booth-icon-link img {
+        width: 32px;
+        height: 32px;
+        }
+        .booth-icon-link:hover img {
         transform: scale(1.1);
         }
 
@@ -445,6 +455,9 @@
 
     <a href="https://github.com/black-sesame-ice-cream/simple-background-generator" target="_blank" rel="noopener noreferrer" class="github-icon-link" title="View on GitHub">
             <img src="images/github-icon.png" alt="GitHub" />
+    </a>
+    <a href="https://korechika.booth.pm/items/7581538" target="_blank" rel="noopener noreferrer" class="booth-icon-link" title="View on BOOTH">
+            <img src="images/booth-icon.svg" alt="BOOTH" />
     </a>
 
     <script>
